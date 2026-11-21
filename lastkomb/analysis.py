@@ -1,6 +1,7 @@
 """Apply a reproducible selection to imported points and generate engineering tables."""
 
 from dataclasses import dataclass
+import re
 
 import numpy as np
 
@@ -21,6 +22,36 @@ def group_of(config, step):
     return config.get("mapping", {}).get(step, infer_step(step))["group"]
 
 
+_MOMENT_AXIS = re.compile(r"(?<!\w)M([yz])(?= \(SM[12]\))")
+_PIN_NAME = re.compile(
+    r"(?:(?:M_?[yz]|N) \((SM[12]|SF1)\)|(SM[12]|SF1)) "
+    r"((?:max|min) vid -?[\d ,]+ m(?: · punkt \d+)?)"
+)
+
+
+class NotationText(str):
+    """A generated engineering label, distinct from arbitrary project or step names."""
+
+    def as_mathtext(self):
+        return _MOMENT_AXIS.sub(lambda m: "$M_{" + m[1] + "}$", self)
+
+
+def notation_runs(text):
+    """Yield ordinary and subscript text from an engineering label."""
+    start = 0
+    for match in _MOMENT_AXIS.finditer(text):
+        yield text[start : match.start(1)], False
+        yield match[1], True
+        start = match.end(1)
+    if start < len(text):
+        yield text[start:], False
+
+
+def _unit_header(label, unit, prefix=""):
+    text = f"{prefix}{label} [{unit}]"
+    return NotationText(text) if isinstance(label, NotationText) else text
+
+
 def quantity_label(quantity, config, part_name):
     """Display engineering notation alongside the Abaqus result identifier."""
     if quantity == "SF1":
@@ -31,8 +62,8 @@ def quantity_label(quantity, config, part_name):
     my = axes.get("My")
     if my not in ("SM1", "SM2"):
         my = "SM2" if axes.get("Mz") == "SM1" else "SM1"
-    axis = "M_y" if quantity == my else "M_z"
-    return f"{axis} ({quantity})"
+    axis = "My" if quantity == my else "Mz"
+    return NotationText(f"{axis} ({quantity})")
 
 
 @dataclass
@@ -128,10 +159,12 @@ class Curve:
 def pin_label(pin, config):
     """Keep saved selection keys stable while displaying the current axis mapping."""
     name = pin["name"]
-    quantity, _, placement = name.partition(" ")
-    if quantity in ("SM1", "SM2", "SF1") and placement.startswith(("max vid ", "min vid ")):
-        return f"{quantity_label(quantity, config, pin['part'])} {placement}"
-    return name
+    match = _PIN_NAME.fullmatch(name)
+    if not match:
+        return name
+    label = quantity_label(match[1] or match[2], config, pin["part"])
+    text = f"{label} {match[3]}"
+    return NotationText(text) if isinstance(label, NotationText) else text
 
 
 def comparison_curves(result, view, config):
@@ -173,13 +206,13 @@ def make_report(result, config, view, project_name="", warnings=()):
     if part.kind == "il":
         return {
             "Influenslinje": (
-                common + [f"{names(q)} [{part.units[q]}]" for q in part.quantities],
+                common + [_unit_header(names(q), part.units[q]) for q in part.quantities],
                 [coords(i) + list(map(float, row[0])) for i, row in enumerate(result.values)],
             )
         }
     qs = part.quantities
     labels = common + ["Styrande storhet", "Extrem", "Värde", "Enhet"]
-    labels += [f"Samtidig {names(q)} [{part.units[q]}]" for q in qs]
+    labels += [_unit_header(names(q), part.units[q], "Samtidig ") for q in qs]
     labels += ["Kombination", "Faktorer per steg", "Tryck i någon kombination"]
 
     def row(r, i, direction):
@@ -218,7 +251,7 @@ def make_report(result, config, view, project_name="", warnings=()):
                 if q == result.target:
                     chosen.append(item)
     axis_source = "Vald axelkoppling" if axes else "Förvald axelkoppling"
-    axes_note = f"{axis_source} · {names('SM1')}, {names('SM2')}"
+    axes_note = NotationText(f"{axis_source} · {names('SM1')}, {names('SM2')}")
     group_names = config.get("group_names", {})
     ped, veh = group_names.get("PED", "Gångtrafik"), group_names.get("VEH", "Servicefordon")
     info = [
@@ -257,7 +290,7 @@ def make_report(result, config, view, project_name="", warnings=()):
     curves = comparison_curves(result, view, config)
     if curves:
         sheets["Valda kurvor"] = (
-            common + [f"{c.name} [{result.unit}]" for c in curves.values()],
+            common + [_unit_header(c.name, result.unit) for c in curves.values()],
             [coords(i) + [float(c.values[i]) for c in curves.values()] for i in range(len(result.ids))],
         )
         for c in curves.values():

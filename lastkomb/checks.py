@@ -24,6 +24,7 @@ from PySide6.QtWidgets import (
 
 from .analysis import calculate, group_of, quantity_label
 from .engine import default_config, envelope
+from .qt_notation import NotationComboBox, engineering_html
 
 
 def number(value):
@@ -194,7 +195,7 @@ class ChecksPanel(QWidget):
 
         self.g_step = QComboBox()
         self._form([("Permanent steg", self.g_step)])
-        self.sym_q, self.step_a, self.step_b = QComboBox(), QComboBox(), QComboBox()
+        self.sym_q, self.step_a, self.step_b = NotationComboBox(), QComboBox(), QComboBox()
         self.parity = QComboBox()
         self.parity.addItem("Samma tecken", 1)
         self.parity.addItem("Motsatt tecken", -1)
@@ -232,6 +233,7 @@ class ChecksPanel(QWidget):
         self.run.clicked.connect(self._run)
         layout.addWidget(self.run)
         self.result = QLabel()
+        self.result.setTextFormat(Qt.TextFormat.RichText)
         self.result.setWordWrap(True)
         self.result.setTextInteractionFlags(
             self.result.textInteractionFlags() | Qt.TextInteractionFlag.TextSelectableByMouse
@@ -388,4 +390,4 @@ class ChecksPanel(QWidget):
         if checked.get(self.part.name) != settings and self.on_save:
             checked[self.part.name] = settings
             self.on_save(checked)
-        self.result.setText(message)
+        self.result.setText(engineering_html(message))

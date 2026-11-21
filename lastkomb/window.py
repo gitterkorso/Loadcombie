@@ -46,6 +46,14 @@ from .data import Source, load_project, parse_sources, save_project
 from .demo import example_sources
 from .engine import default_config, infer_step
 from .report import write_tables
+from .qt_notation import (
+    NOTATION_ROLE,
+    NotationComboBox,
+    NotationHeader,
+    NotationMenu,
+    NotationStatusBar,
+    engineering_html,
+)
 from .settings import SettingsPanel
 from .style import stylesheet
 from .fatigue import FatiguePanel
@@ -223,6 +231,7 @@ class MainWindow(QMainWindow):
             self.load_demo()
 
     def build_ui(self):
+        self.setStatusBar(NotationStatusBar(self))
         shell = QWidget()
         self.setCentralWidget(shell)
         outer = QVBoxLayout(shell)
@@ -290,7 +299,7 @@ class MainWindow(QMainWindow):
         box.addWidget(self.tabs, 1)
         chartpage, chartbox = panel(7)
         self.tabs.addTab(chartpage, "Diagram")
-        self.qty = QComboBox()
+        self.qty = NotationComboBox()
         self.qty.currentIndexChanged.connect(self.change_quantity)
         self.face = QComboBox()
         self.face.currentIndexChanged.connect(self.change_side)
@@ -301,7 +310,7 @@ class MainWindow(QMainWindow):
             item.setToolTip("Intervallgräns i meter. Tryck Retur för att tillämpa.")
             item.returnPressed.connect(self.apply_interval)
         self.series = QPushButton("Kurvor ▾")
-        self.series_menu = QMenu(self.series)
+        self.series_menu = NotationMenu(self.series)
         self.series_menu.aboutToShow.connect(self.build_curves)
         self.series.setMenu(self.series_menu)
         self.reset_range = button("Hela", lambda: self.interval(None, None))
@@ -331,6 +340,7 @@ class MainWindow(QMainWindow):
             button("Spara figur…", self.export_figure),
         )
         self.table = QTableView()
+        self.table.setHorizontalHeader(NotationHeader(self.table))
         self.model = Grid()
         self.table.setModel(self.model)
         self.table.setAlternatingRowColors(True)
@@ -367,7 +377,7 @@ class MainWindow(QMainWindow):
         details.addWidget(self.more_issues)
         self.update_sources = button("Läs uppdaterade källfiler", self.refresh_sources)
         details.addWidget(self.update_sources)
-        self.extreme_combo = QComboBox()
+        self.extreme_combo = NotationComboBox()
         self.extreme_combo.addItem("Styrande maximum", "max")
         self.extreme_combo.addItem("Styrande minimum", "min")
         self.extreme_combo.currentIndexChanged.connect(self.change_extreme)
@@ -957,6 +967,9 @@ class MainWindow(QMainWindow):
             self.extreme_combo.addItem("Styrande minimum", "min")
         for key, curve in self.curves.items():
             self.extreme_combo.addItem(curve.name, key)
+            self.extreme_combo.setItemData(
+                self.extreme_combo.count() - 1, curve.group == "COMB", NOTATION_ROLE
+            )
         self.extreme_combo.blockSignals(False)
         self.extreme_combo.setEnabled(not il)
         pts = [result.part.points[i] for i in result.ids]
@@ -967,6 +980,11 @@ class MainWindow(QMainWindow):
             f"{'Värde' if il else 'Max'} {quantity} [{result.unit}]",
         ]
         headers += [] if il else [f"Min {quantity} [{result.unit}]"]
+        notation_columns = set(range(1, len(headers)))
+        notation_columns.update(
+            i for i, c in enumerate(self.curves.values(), len(headers)) if c.group == "COMB"
+        )
+        self.table.horizontalHeader().notation_columns = notation_columns
         headers.extend(f"{curve.name} [{result.unit}]" for curve in self.curves.values())
         keys = [
             key for key in ("element", "node", "side", "hanger", "y", "z") if any(key in p for p in pts)
@@ -1022,12 +1040,13 @@ class MainWindow(QMainWindow):
         self.update_sources.setVisible(any("källfilen har ändrats" in s.lower() for s in self.source_notes))
         if notes:
             first = notes[0]
-            self.notice.setText(first[:170] + ("…" if len(first) > 170 else ""))
+            self.notice.setTextFormat(Qt.TextFormat.RichText)
+            self.notice.setText(engineering_html(first[:170] + ("…" if len(first) > 170 else "")))
             self.more_issues.setText(f"Visa importkontroll ({len(notes)})")
         self.import_notes.setHtml(
             "<h3>Importkontroll</h3><p>Stegen ska innehålla oberoende lastbidrag från en linjär analys i samma koordinatsystem. Horisontallastens storlek ska redan ingå i H-steget.</p>"
             + (
-                "<ul>" + "".join(f"<li>{escape(str(s))}</li>" for s in notes) + "</ul>"
+                "<ul>" + "".join(f"<li>{engineering_html(str(s))}</li>" for s in notes) + "</ul>"
                 if notes
                 else "<p>Inga importavvikelser i de aktiva filerna.</p>"
             )
@@ -1078,7 +1097,7 @@ class MainWindow(QMainWindow):
         quantity = quantity_label(q, self.config, r.part.name)
         val = fmt(curve.values[idx] if curve else r.bounds[direction][idx], 6)
         unit = escape(r.unit)
-        title = f"<h2>{escape(quantity)} &nbsp; {val} <small>{unit}</small></h2>"
+        title = f"<h2>{engineering_html(quantity)} &nbsp; {val} <small>{unit}</small></h2>"
         keys = [
             ("x", "x"),
             ("pos", "Läge"),
@@ -1105,7 +1124,12 @@ class MainWindow(QMainWindow):
                 else "Styrande kombination"
             )
             description = curve.name if curve else r.bounds["label" + direction][idx]
-            html += f"<h3>{title}</h3><p>{escape(str(description))}</p>"
+            description_html = (
+                engineering_html(description)
+                if curve and curve.group == "COMB"
+                else escape(str(description))
+            )
+            html += f"<h3>{title}</h3><p>{description_html}</p>"
             if q == "Mises":
                 html += "<p>σeq = √(S11² + S22² − S11·S22 + 3·S12²)</p>"
             rows = []
@@ -1130,7 +1154,7 @@ class MainWindow(QMainWindow):
         html += (
             "<p>"
             + "<br>".join(
-                f"{escape(quantity_label(c, self.config, r.part.name))} &nbsp; <b>{fmt(v, 6)}</b> {escape(r.part.units[c])}"
+                f"{engineering_html(quantity_label(c, self.config, r.part.name))} &nbsp; <b>{fmt(v, 6)}</b> {escape(r.part.units[c])}"
                 for c, v in zip(r.part.quantities, f @ r.values[idx])
             )
             + "</p>"
@@ -1180,6 +1204,7 @@ class MainWindow(QMainWindow):
             menu.addSeparator()
             for i, p in enumerate(self.view["pins"]):
                 a = menu.addAction("Ta bort · " + pin_label(p, self.config))
+                a.setProperty("engineeringLabel", True)
                 a.triggered.connect(lambda _, idx=i: self.remove_pin(idx))
 
     def overlay(self, step, on):
@@ -1199,6 +1224,7 @@ class MainWindow(QMainWindow):
         self.project_caption()
 
     def message(self, text):
+        self.notice.setTextFormat(Qt.TextFormat.PlainText)
         self.notice.setText(str(text))
         self.notice.show()
         self.statusBar().showMessage(str(text), 9000)

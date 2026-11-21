@@ -25,7 +25,7 @@ exe = EXE(
     codesign_identity=args.sign_identity,
 )
 collect = COLLECT(exe, analysis.binaries, analysis.datas, name="Lastkomb")
-metadata = {"CFBundleVersion": "1"}
+metadata = {"CFBundleVersion": "2"}
 if args.minimum_macos:
     metadata["LSMinimumSystemVersion"] = args.minimum_macos
 app = BUNDLE(
@@ -33,6 +33,6 @@ app = BUNDLE(
     name="Lastkomb.app",
     icon=icon,
     bundle_identifier="se.lastkomb.desktop",
-    version="0.1.0",
+    version="0.1.1",
     info_plist=metadata,
 )

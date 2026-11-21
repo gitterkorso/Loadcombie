@@ -30,6 +30,7 @@ from PySide6.QtWidgets import (
 )
 
 from .analysis import quantity_label
+from .qt_notation import engineering_html
 
 
 def cyclic_rainflow(history):
@@ -228,6 +229,7 @@ class FatiguePanel(QWidget):
         self.run.clicked.connect(self._calculate)
         layout.addWidget(self.run, alignment=Qt.AlignmentFlag.AlignLeft)
         self.summary = QLabel()
+        self.summary.setTextFormat(Qt.TextFormat.RichText)
         self.summary.setWordWrap(True)
         self.summary.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
         layout.addWidget(self.summary)
@@ -267,10 +269,11 @@ class FatiguePanel(QWidget):
         self.config = config
         name = part.name if part is not None else ""
         m1, m2 = (quantity_label(q, config, name) for q in ("SM1", "SM2"))
-        self.bending_labels["k1"].setText(f"k₁ för {m1} [MPa/kNm]")
-        self.bending_labels["k2"].setText(f"k₂ för {m2} [MPa/kNm]")
+        self.bending_labels["k1"].setText(engineering_html(f"k₁ för {m1} [MPa/kNm]"))
+        self.bending_labels["k2"].setText(engineering_html(f"k₂ för {m2} [MPa/kNm]"))
+        axis1, axis2 = (m.split()[0][-1] for m in (m1, m2))
         self.formula.setText(
-            f"Nominell fiberspänning σ = 1 000·N/A + k₁·{m1.split()[0]} + k₂·{m2.split()[0]}. "
+            f"Nominell fiberspänning σ = 1 000·N/A + k₁·M<sub>{axis1}</sub> + k₂·M<sub>{axis2}</sub>. "
             "Ange k med tecken för en bestämd fiber i Abaqus lokala axlar. "
             "Med avstånd r i mm och I i mm⁴ är k = ±10⁶·r/I. "
             "Välj detaljkategori för den verkliga svetsen och aktuell godstjocklek."
@@ -301,7 +304,7 @@ class FatiguePanel(QWidget):
         try:
             result = passage(self.part, params, self.config)
         except (ValueError, ArithmeticError) as exc:
-            self.summary.setText(str(exc))
+            self.summary.setText(engineering_html(str(exc)))
             return
         life = (
             f"{result.passages:,} hela passager till D = 1".replace(",", " ")

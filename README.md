@@ -38,7 +38,7 @@ Utan uttrycklig enhet används m för koordinater och förskjutningar, kN för k
 - Avsnitt 3.4.3 anger H som 10 % av belastad gånglast och 60 % av fordonslasten. H-steg ska redan innehålla dessa krafter. Programmet lägger inte på procentsatsen igen. Stegen måste vara oberoende lastbidrag i samma lokala axelsystem. Historiska totaler från successivt pålastade analyssteg behöver först omvandlas till oberoende bidrag.
 - Kravspecifikationen använder fält 01–10 med P1 = 02–09 och P2 = 02–05. Placeringsritningen daterad 17 november använder 00–09. Kontrollera kopplingen i **Lastregler → Steg** och justera P1/P2 till den egna exporten.
 - Vid x = 15 m har V2 och V4 båda den tunga axeln vid 15 m och den lätta vid 12 m enligt placeringsritningen. De skiljer sig i sidled. Välj ett faktiskt spegelfall för symmetrikontrollen.
-- Diagram och tabeller visar normalkraft som **N (SF1)**. Grundinställningen för böjmoment är **M_y (SM1)** och **M_z (SM2)**. Under **Lastregler → Modell** kan du byta momentaxlar för en del. Tecknen följer den importerade Abaqus-modellen.
+- Diagram och tabeller visar normalkraft som **N (SF1)**. Grundinställningen för böjmoment är **M<sub>y</sub> (SM1)** och **M<sub>z</sub> (SM2)**. Under **Lastregler → Modell** kan du byta momentaxlar för en del. Tecknen följer den importerade Abaqus-modellen.
 - För plåt kombineras S11, S22 och S12 för varje tillåten lastplacering före beräkning av von Mises. En negativ minsta huvudspänning i någon kombination markeras som tryck. Flaggan är en konservativ signal för granskning. Lokal och global bucklingsbärförmåga enligt uppgiftens avsnitt 6.4 behöver kontrolleras separat. Saknas spänningskomponenter visas tryckstatus som **Okänt**.
 - Kontrollerna för **L/400** och **reaktionsjämvikt** behöver en vertikal U-komponent och teoretisk spännvidd respektive RF-värden för alla stöd och yttre lastresultant. De ordinarie 15 exportfilerna innehåller snittkrafter, spänningar och influenslinjer.
 - För **Fordonsöverfart** används en komplett influenslinje från det aktuella snittet för en nedåtriktad enhetslast fördelad över rätt hjulspår. Ange area, vald fiber och detaljkategori. Extrapolationen använder noll utanför bron och kräver noll i ändpunkterna. Förvalen för lastplaceringen är 80 kN vid x och 40 kN vid x − 3 m. Cykelräkningen gäller en upprepad vertikal passage i positiv x-riktning. Bromskraft kräver ett separat lastförlopp. Programmet visar spänningsvidder, skadeandel per passage och helt antal passager till D = 1.
@@ -53,7 +53,7 @@ Utan uttrycklig enhet används m för koordinater och förskjutningar, kN för k
 
 ## Verifiering
 
-Arbetsboken [Handkontroll.xlsx](Handkontroll.xlsx) räknar oberoende på det syntetiska exemplets M_y (SM1) i huvudbalken vid x = 15 m. Arbetsboken har räknats om i LibreOffice och jämförts med en separat genomräkning av fältkombinationerna.
+Arbetsboken [Handkontroll.xlsx](Handkontroll.xlsx) räknar oberoende på det syntetiska exemplets M<sub>y</sub> (SM1) i huvudbalken vid x = 15 m. Arbetsboken har räknats om i LibreOffice och jämförts med en separat genomräkning av fältkombinationerna.
 
 | Ekvation | Max [kNm] | Min [kNm] |
 | --- | ---: | ---: |
@@ -79,6 +79,6 @@ Mac-paketet byggs lokalt med PyInstaller. Installera `pyinstaller` och `pillow` 
 python packaging/build_macos.py --build build-mac --dmg Lastkomb-Mac.dmg
 ```
 
-För distribution kan du ange en Developer ID Application-identitet med `--sign-identity` och den lägsta macOS-version som stöds av de paketerade biblioteken med `--minimum-macos`. Version 0.1.0 byggdes med CPython 3.12.16, PySide6 6.10.3 och PyInstaller 6.22.3 för arm64.
+För distribution kan du ange en Developer ID Application-identitet med `--sign-identity` och den lägsta macOS-version som stöds av de paketerade biblioteken med `--minimum-macos`. Version 0.1.1 byggdes med CPython 3.12.16, PySide6 6.10.3 och PyInstaller 6.22.3 för arm64.
 
 Windows-paketet byggs med det inbäddade Python för x64, låsta binärpaket och en liten körbar startfil. Installera `ziglang==0.13.0` och kör `python packaging/build_windows.py --cache build-cache --out Lastkomb-Windows-x64.zip`. Nedladdning behövs endast vid bygge. Den färdiga appen körs offline.

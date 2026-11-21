@@ -5,7 +5,7 @@ from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
 from matplotlib.ticker import FuncFormatter, MaxNLocator
 
-from .analysis import fmt, quantity_label
+from .analysis import NotationText, fmt, quantity_label
 
 BLUE = "#2264ad"
 TEAL = "#168275"
@@ -106,9 +106,10 @@ class Chart(FigureCanvasQTAgg):
             color=ink,
             fontsize=9,
         )
-        ax.set_ylabel(
-            f"{quantity_label(result.target, config, part.name)} [{result.unit}]", color=ink, fontsize=9
-        )
+        label = quantity_label(result.target, config, part.name)
+        if isinstance(label, NotationText):
+            label = label.as_mathtext()
+        ax.set_ylabel(f"{label} [{result.unit}]", color=ink, fontsize=9)
         ax.yaxis.set_major_locator(MaxNLocator(nbins=6))
         groups = defaultdict(list)
         ys = {p.get("y") for p in pts}
@@ -152,7 +153,8 @@ class Chart(FigureCanvasQTAgg):
             if not il:
                 self.picklines.append((ids, lower[ids], "min"))
             for key, c in curves.items():
-                trace(c.values, c.name, colors[c.group], "-" if c.group == "COMB" else "--", 1.1)
+                name = c.name.as_mathtext() if isinstance(c.name, NotationText) else c.name
+                trace(c.values, name, colors[c.group], "-" if c.group == "COMB" else "--", 1.1)
                 self.picklines.append((ids, c.values[ids], key))
         markers = config.get("markers", {})
         if part.kind != "plate":

@@ -70,7 +70,7 @@ def test_real_window_save_restore_and_export(app, tmp_path, monkeypatch):
         wb = load_workbook(sheet, read_only=True, data_only=True)
         report = list(wb["Redovisning 5.3"].values)
         assert len(report) == 7
-        assert "Samtidig M_y (SM2) [kNm]" in report[0]
+        assert "Samtidig My (SM2) [kNm]" in report[0]
         assert "Samtidig N (SF1) [kN]" in report[0]
         assert "Valda kurvor" in wb.sheetnames
         wb.close()
@@ -103,7 +103,7 @@ def test_apply_custom_g_factor_reopen_and_export(app, tmp_path, monkeypatch):
         w.reset([source], default_config(), fresh_view(), path, False)
         ready(app, w)
         assert w.view["target"] == "SM1"
-        assert "M_y (SM1)" in w.inspector.toPlainText()
+        assert "My (SM1)" in w.inspector.toPlainText()
         assert w.result.bounds["max"][0] == pytest.approx(108)
         panel = w.settings
         panel.step_table.setCurrentCell(panel.steps.index("G_SHRINK"), 0)

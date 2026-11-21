@@ -10,6 +10,8 @@ import tempfile
 from numbers import Integral, Real
 from pathlib import Path
 
+from .analysis import NotationText, notation_runs
+
 
 def _cell(value):
     if value is None or isinstance(value, (bool, str)):
@@ -41,7 +43,7 @@ def _rows(headers, rows):
     headers = list(headers)
     if not headers:
         raise ValueError("En exporttabell saknar rubriker.")
-    yield [str(header) for header in headers]
+    yield [header if isinstance(header, str) else str(header) for header in headers]
     for i, row in enumerate(rows, start=2):
         if len(row) != len(headers):
             raise ValueError(f"Rad {i} har {len(row)} värden men tabellen har {len(headers)} kolumner.")
@@ -62,11 +64,15 @@ def _unique(name, used, limit):
 
 def _write_xlsx(tmp, sheets):
     from openpyxl import Workbook
+    from openpyxl.cell.rich_text import CellRichText, TextBlock
+    from openpyxl.cell.text import InlineFont
     from openpyxl.styles import Alignment, Font, PatternFill
     from openpyxl.utils import get_column_letter
 
     book = Workbook()
     book.remove(book.active)
+    subscript = InlineFont(vertAlign="subscript")
+    heading_subscript = InlineFont(vertAlign="subscript", b=True, color="FFFFFF")
     used = set()
     for name, (headers, rows) in sheets.items():
         tab = re.sub(r"[\\/*?:\[\]\x00-\x1f]", "_", name).strip(" '") or "Tabell"
@@ -75,7 +81,15 @@ def _write_xlsx(tmp, sheets):
         for r, row in enumerate(_rows(headers, rows), start=1):
             for c, value in enumerate(row, start=1):
                 cell = sheet.cell(r, c, value)
-                if isinstance(value, str):
+                if isinstance(value, NotationText):
+                    font = heading_subscript if r == 1 else subscript
+                    cell.value = CellRichText(
+                        [
+                            TextBlock(font, text) if lowered else text
+                            for text, lowered in notation_runs(value)
+                        ]
+                    )
+                elif isinstance(value, str):
                     cell.data_type = "s"
                 if r == 1:
                     cell.font = Font(bold=True, color="FFFFFF")

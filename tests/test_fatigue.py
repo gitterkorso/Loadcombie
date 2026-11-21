@@ -99,6 +99,11 @@ def test_gui_save_restore_per_il(monkeypatch):
     panel = FatiguePanel(saved.append)
     p = line()
     panel.load(p, {})
+    assert "<sub>y</sub>" in panel.bending_labels["k1"].text()
+    assert "M<sub>y</sub>" in panel.formula.text()
+    panel.load(p, {"part_axes": {p.name: {"My": "SM2", "Mz": "SM1"}}})
+    assert "<sub>z</sub>" in panel.bending_labels["k1"].text()
+    assert "k₁·M<sub>z</sub>" in panel.formula.text()
     panel.axle_path.setChecked(True)
     panel.axial_only.setChecked(True)
     for name, value in settings().items():

@@ -26,6 +26,7 @@ from PySide6.QtWidgets import (
 )
 
 from .engine import default_config, infer_step
+from .qt_notation import NotationComboBox
 
 GROUPS = {"G": "Permanent", "PED": "Gångtrafik", "VEH": "Fordon"}
 COLORS = {"G": "#788391", "PED": "#3979a6", "VEH": "#c77936"}
@@ -60,8 +61,8 @@ def factor_input(factor, name):
     return editor
 
 
-def choices(entries):
-    box = QComboBox()
+def choices(entries, box_type=QComboBox):
+    box = box_type()
     for value, label in entries:
         box.addItem(label, value)
     return box
@@ -386,10 +387,11 @@ class SettingsPanel(QWidget):
         form.setRowWrapPolicy(QFormLayout.RowWrapPolicy.WrapLongRows)
         self.axes = choices(
             [
-                ("", "Förval · M_y (SM1), M_z (SM2)"),
-                ("SM1", "Bekräftad · M_y (SM1), M_z (SM2)"),
-                ("SM2", "Bekräftad · M_y (SM2), M_z (SM1)"),
-            ]
+                ("", "Förval · My (SM1), Mz (SM2)"),
+                ("SM1", "Bekräftad · My (SM1), Mz (SM2)"),
+                ("SM2", "Bekräftad · My (SM2), Mz (SM1)"),
+            ],
+            NotationComboBox,
         )
         form.addRow("Momentaxlar", self.axes)
         axes_info = QLabel(
