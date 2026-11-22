@@ -14,9 +14,10 @@ from PySide6.QtCore import (
     Qt,
     QThreadPool,
     QTimer,
+    QUrl,
     Signal,
 )
-from PySide6.QtGui import QAction, QBrush, QColor, QIcon, QKeySequence, QPixmap
+from PySide6.QtGui import QAction, QBrush, QColor, QDesktopServices, QIcon, QKeySequence, QPixmap
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QApplication,
@@ -40,12 +41,14 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from .activity import CalculationIndicator
 from .analysis import calculate, comparison_curves, fmt, group_of, make_report, pin_label, quantity_label
 from .chart import Chart, BLUE, ORANGE
 from .data import Source, load_project, parse_sources, save_project
 from .demo import example_sources
 from .engine import default_config, infer_step
 from .report import write_tables
+from .section import SectionInspector
 from .qt_notation import (
     NOTATION_ROLE,
     NotationComboBox,
@@ -290,6 +293,8 @@ class MainWindow(QMainWindow):
             self.mode.addItem(name, code)
         self.mode.currentIndexChanged.connect(self.change_mode)
         top.addWidget(self.heading)
+        self.calculation_indicator = CalculationIndicator("Beräknar…")
+        top.addWidget(self.calculation_indicator)
         top.addStretch()
         top.addWidget(self.mode)
         box.addLayout(top)
@@ -325,7 +330,7 @@ class MainWindow(QMainWindow):
             self.reset_range,
             self.series,
         )
-        self.chart = Chart(self.pick, self.interval)
+        self.chart = Chart(self.pick, self.interval, self.inspect_section)
         self.chart.setMinimumSize(180, 100)
         self.chart.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.vert_split = QSplitter(VERT)
@@ -377,6 +382,10 @@ class MainWindow(QMainWindow):
         details.addWidget(self.more_issues)
         self.update_sources = button("Läs uppdaterade källfiler", self.refresh_sources)
         details.addWidget(self.update_sources)
+        self.section = SectionInspector()
+        self.section.closed.connect(lambda: self.chart.mark_section(None))
+        self.section.selected.connect(self.choose_section_extreme)
+        details.addWidget(self.section)
         self.extreme_combo = NotationComboBox()
         self.extreme_combo.addItem("Styrande maximum", "max")
         self.extreme_combo.addItem("Styrande minimum", "min")
@@ -414,9 +423,16 @@ class MainWindow(QMainWindow):
         action("Nästa storhet", "Alt+Down", lambda: self.next_item(self.qty))
         action("Nästa del", "Alt+Right", self.next_part)
         action("Nästa beräkningsläge", "Alt+M", lambda: self.next_item(self.mode))
+        self.more.addSeparator()
+        action("Användarmanual", "F1", self.open_manual)
         action("Öppna", QKeySequence.StandardKey.Open, self.open_file, False)
         action("Spara", QKeySequence.StandardKey.Save, self.save, False)
         action("Nytt", QKeySequence.StandardKey.New, self.new, False)
+
+    def open_manual(self):
+        manual = Path(__file__).with_name("manual.html").resolve()
+        if not manual.is_file() or not QDesktopServices.openUrl(QUrl.fromLocalFile(str(manual))):
+            QMessageBox.warning(self, "Användarmanual", f"Manualen kunde inte öppnas. Sökväg:\n{manual}")
 
     def current_part(self):
         return self.parts.get(self.view["part"])
@@ -534,9 +550,12 @@ class MainWindow(QMainWindow):
             event.ignore()
             return
         self.timer.stop()
+        self.revision += 1
+        self.calculation_indicator.set_busy(False)
         self.cancel_compute.set()
         self.pool.clear()
         self.pool.waitForDone()
+        self.section.shutdown()
         event.accept()
 
     def load_path(self, path):
@@ -713,7 +732,8 @@ class MainWindow(QMainWindow):
         self.upper.setText("" if self.view["hi"] is None else fmt(self.view["hi"], 6))
         self.heading.setText(part.name if part else "Resultat")
         self.chart.setToolTip(
-            "Klicka på en extrempunkt för att granska den. Dra vågrätt för att välja intervall."
+            "Klicka eller dra för att granska ett snitt. Klicka på en kurvpunkt för dess lastfall. "
+            "Håll ned Skift och dra vågrätt för att välja intervall."
         )
         self.stats.setText(
             f"{len(self.sources)} filer · {len(self.parts)} delar\n{sum(len(p.points) for p in self.parts.values())} punkter · {len(self.steps)} laststeg"
@@ -896,10 +916,12 @@ class MainWindow(QMainWindow):
         self.cancel_compute.set()
         self.cancel_compute = Event()
         self.pool.clear()
+        self.calculation_indicator.set_busy(self.current_part() is not None)
         self.result = None
         self.pin_button.setEnabled(False)
         self.model.replace([], [])
         self.chart.render(None, {}, self.config)
+        self.section.suspend()
         self.inspector.setPlainText(
             "Beräknar aktuellt urval…" if self.parts else "Importera en mapp eller välj CSV-filer."
         )
@@ -922,6 +944,7 @@ class MainWindow(QMainWindow):
     def present(self, revision, result, error):
         if revision != self.revision:
             return
+        self.calculation_indicator.set_busy(False)
         self.result = result
         warnings = ([error] if error else []) + (result.warnings if result else [])
         if result and result.part.kind != "il":
@@ -1073,6 +1096,31 @@ class MainWindow(QMainWindow):
         if self.result and not self.locked:
             self.pick(self.selected, self.extreme_combo.currentData())
 
+    def inspect_section(self, position):
+        if self.result is None:
+            return
+        self.section.active = True
+        x = self.chart.positions
+        start, stop = x.searchsorted(position, "left"), x.searchsorted(position, "right")
+        direction = self.view["extreme"]
+        idx = self.selected
+        if not start <= idx < stop:
+            values = self.chart.ordinates[direction][start:stop]
+            offset = np.argmin(values) if direction == "min" else np.argmax(values)
+            idx = int(start + offset)
+        self.pick(idx, direction)
+
+    def choose_section_extreme(self, quantity, idx, direction):
+        result = self.result
+        if result is None or result is not self.section.result:
+            return
+        if quantity == result.target:
+            self.pick(idx, direction)
+        else:
+            self.before()
+            self.view.update(target=quantity, point=result.ids[idx], extreme=direction)
+            self.sync()
+
     def pick(self, idx, direction, user=True):
         r = self.result
         if not r:
@@ -1091,6 +1139,10 @@ class MainWindow(QMainWindow):
         self.extreme_combo.blockSignals(False)
         self.table.selectRow(self.model.order.index(idx))
         self.chart.select_point(idx, direction)
+        if self.section.active:
+            self.chart.mark_section(self.chart.positions[idx])
+            self.section.inspect(r, self.chart.positions, idx, self.config, MODE_NAMES[self.config["mode"]],
+                                 direction, curve)
         pt = r.part.points[r.ids[idx]]
         f = curve.factors if curve else r.bounds["f" + direction][idx]
         q = r.target
@@ -1220,7 +1272,8 @@ class MainWindow(QMainWindow):
         self.redraw()
 
     def redraw(self):
-        self.present(self.revision, self.result, "")
+        if self.result is not None:
+            self.present(self.revision, self.result, "")
         self.project_caption()
 
     def message(self, text):

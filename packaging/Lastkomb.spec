@@ -11,7 +11,12 @@ root = Path(SPECPATH).parent
 icon = str(root / "packaging/Lastkomb.icns")
 analysis = Analysis(
     [str(root / "start.py")],
-    datas=[(str(root / "lastkomb/icon.png"), "lastkomb"), (args.font_cache, ".")],
+    datas=[
+        (str(root / "lastkomb/icon.png"), "lastkomb"),
+        (str(root / "lastkomb/manual.html"), "lastkomb"),
+        (str(root / "lastkomb/manual-snitt.png"), "lastkomb"),
+        (args.font_cache, "."),
+    ],
     excludes=["tkinter", "PyQt5", "PyQt6"],
 )
 exe = EXE(

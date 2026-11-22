@@ -1,6 +1,7 @@
 """Exercise the GUI-to-engine path and persisted selection, including coexisting panels."""
 
 import os
+from threading import Event
 import time
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
@@ -31,6 +32,79 @@ def ready(app, window):
             return
         QTest.qWait(10)
     raise AssertionError(window.statusBar().currentMessage())
+
+
+def test_calculation_indicator_tracks_current_job(app, monkeypatch):
+    w = MainWindow()
+    w.show()
+    indicator = w.calculation_indicator
+    first_started, first_release = Event(), Event()
+    second_started, second_release = Event(), Event()
+
+    def wait_for(condition):
+        deadline = time.monotonic() + 5
+        while not condition() and time.monotonic() < deadline:
+            QTest.qWait(10)
+        assert condition()
+
+    try:
+        ready(app, w)
+        assert indicator.isHidden()
+
+        def slow_calculation(*args):
+            if not first_started.is_set():
+                first_started.set()
+                first_release.wait(10)
+                raise ValueError("Tidigare urval")
+            second_started.set()
+            second_release.wait(10)
+            raise ValueError("Ogiltigt urval")
+
+        monkeypatch.setattr("lastkomb.window.calculate", slow_calculation)
+        w.schedule()
+        assert indicator.isHidden()
+        wait_for(lambda: first_started.is_set() and indicator.isVisible())
+
+        w.schedule()
+        w.redraw()
+        first_release.set()
+        wait_for(second_started.is_set)
+        assert indicator.isVisible()
+        assert "Tidigare urval" not in w.statusBar().currentMessage()
+        second_release.set()
+        wait_for(lambda: w.statusBar().currentMessage() == "Ogiltigt urval")
+        assert indicator.isHidden()
+
+        monkeypatch.setattr("lastkomb.window.calculate", calculate)
+        w.schedule()
+        ready(app, w)
+        assert indicator.isHidden()
+        w.schedule()
+        w.close()
+        assert indicator.isHidden() and not indicator.delay.isActive()
+    finally:
+        first_release.set()
+        second_release.set()
+        w.close()
+
+
+def test_panel_calculations_restore_cursor_on_error(app, monkeypatch):
+    w = MainWindow()
+    try:
+        def invalid_input(*args):
+            assert app.overrideCursor().shape() == Qt.CursorShape.WaitCursor
+            raise ValueError("Ogiltiga indata")
+
+        monkeypatch.setattr("lastkomb.checks.check_identity", invalid_input)
+        monkeypatch.setattr("lastkomb.fatigue.passage", invalid_input)
+        w.checks.load(w.current_part(), w.config, w.view)
+        w.fatigue.load(next(p for p in w.parts.values() if p.kind == "il"), w.config)
+        for panel, output in ((w.checks, w.checks.result), (w.fatigue, w.fatigue.summary)):
+            panel.run.click()
+            assert output.text() == "Ogiltiga indata"
+            assert app.overrideCursor() is None
+    finally:
+        w.close()
 
 
 def test_real_window_save_restore_and_export(app, tmp_path, monkeypatch):

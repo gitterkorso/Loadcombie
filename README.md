@@ -4,10 +4,13 @@ Lastkomb är ett svenskt skrivbordsprogram för lastkombinationer längs en bro.
 
 ## Starta och importera
 
+- **Windows x64.** Packa upp hela Windows-zippen och öppna `Lastkomb.exe` i mappen `Lastkomb`. Python och Qt ingår.
 - **Mac med Apple Silicon och macOS 15 eller senare.** Hämta DMG-filen från den senaste releasen, öppna den och dra **Lastkomb** till **Program**. [Ladda ner för Mac](https://github.com/gitterkorso/Loadcombie/releases/latest)
 - Första starten visar ett **syntetiskt räkneexempel** med huvudbalk, plåt och influenslinje. Välj **Importera CSV…**, **+ Mapp** eller dra en mapp till fönstret. Den första egna importen ersätter exemplet. Efterföljande importer lägger till data. **Mer → Öppna räkneexempel** öppnar exemplet igen.
 
-Välj del i trädet, storhet ovanför diagrammet och beräkningsläge uppe till höger. För plåtar väljer du även SPOS eller SNEG. Skriv intervallgränser och tryck Retur, eller dra vågrätt i diagrammet. **Hela** återställer intervallet. Klicka på en kurvpunkt eller en cell i max/min-kolumnen för att se styrande ekvation, laststeg, delbidrag och samtidiga värden.
+Välj del i trädet, storhet ovanför diagrammet och beräkningsläge uppe till höger. För plåtar väljer du även SPOS eller SNEG. Momentdiagram visar positivt moment nedåt. Klicka eller dra i diagrammet för att avläsa alla storheter vid närmaste snitt. Klicka på en kurvpunkt eller en cell i max/min-kolumnen för att se styrande ekvation, laststeg, delbidrag och samtidiga värden. Skriv intervallgränser och tryck Retur, eller håll **Skift** och dra vågrätt i diagrammet. **Hela** återställer intervallet.
+
+Öppna [användarmanualen](lastkomb/manual.html) via **Mer → Användarmanual** eller **F1**. Den innehåller ett genomräknat exempel, anvisningar för CSV-import och en guide till snitt, lastregler, kontroller och export.
 
 **Kurvor** lägger enskilda ofaktorerade laststeg ovanpå omhöljet. **Visa kombination som kurva** tillämpar den valda punktens faktorvektor på hela delen. En sådan kurva visar en enda fysisk lastplacering. Omhöljets olika punkter kan ha olika lastplaceringar. Fästa kurvor rensas när lastreglerna ändras. I **Lastregler → Modell** kan du ange lägen för lager, hängare och fordonets tunga axel och bekräfta momentaxlarna för den aktuella delen.
 

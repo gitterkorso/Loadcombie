@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Lastkomb – användarmanual</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #172f38;
+      --muted: #465e66;
+      --accent: #006c64;
+      --line: #cedcd9;
+      --paper: #fff;
+      --wash: #edf6f3;
+      font-family: "Segoe UI", system-ui, sans-serif;
+      line-height: 1.53;
+      color: var(--ink);
+      background: var(--paper);
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; }
+    .layout { display: grid; grid-template-columns: minmax(12rem, 16rem) minmax(0, 51rem); gap: clamp(2rem, 6vw, 5.5rem); max-width: 80rem; padding: 2.6rem clamp(1.1rem, 5vw, 4rem) 5rem; margin: auto; }
+    nav { align-self: start; position: sticky; top: 2rem; border-left: 3px solid var(--accent); padding: .2rem 0 .2rem 1rem; }
+    nav strong { display: block; margin-bottom: .6rem; }
+    nav ul { list-style: none; padding: 0; margin: 0; }
+    nav li { margin: .4rem 0; }
+    a { color: var(--accent); text-underline-offset: .17em; }
+    a:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; }
+    h1, h2, h3 { line-height: 1.16; text-wrap: balance; }
+    h1 { margin: 0 0 .6rem; font-size: clamp(2.1rem, 5vw, 3.45rem); letter-spacing: -.045em; }
+    h2 { margin: 1.75rem 0 .6rem; font-size: clamp(1.55rem, 3vw, 2rem); letter-spacing: -.035em; }
+    h3 { margin: 1.2rem 0 .45rem; font-size: 1.12rem; }
+    header p { font-size: 1.12rem; color: var(--muted); max-width: 49rem; }
+    section { scroll-margin-top: 1.4rem; }
+    .chapter + .chapter { border-top: 1px solid var(--line); margin-top: 2.4rem; padding-top: .4rem; }
+    p { margin: .45rem 0 .8rem; }
+    ol, ul { padding-left: 1.35rem; }
+    li { margin: .36rem 0; }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; margin: .7rem 0 1rem; font-size: .94rem; }
+    th, td { text-align: left; vertical-align: top; border-bottom: 1px solid var(--line); padding: .46rem .55rem; }
+    thead th { color: var(--ink); background: var(--wash); }
+    td.num, th.num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+    code, kbd { font-family: Consolas, "Courier New", monospace; font-size: .91em; }
+    pre { padding: .7rem .85rem; background: #f0f4f3; overflow: auto; font-size: .93rem; line-height: 1.45; }
+    .example { border-left: 3px solid var(--accent); background: var(--wash); padding: .65rem .95rem; margin: .7rem 0; }
+    .example p:last-child { margin-bottom: .25rem; }
+    .formula { font-variant-numeric: tabular-nums; }
+    figure { margin: 1.2rem 0 0; }
+    figure img { display: block; width: 100%; height: auto; border: 1px solid var(--line); }
+    figcaption { margin-top: .4rem; color: var(--muted); font-size: .91rem; }
+    @media (max-width: 800px) {
+      .layout { display: block; padding-top: 1.3rem; }
+      nav { position: static; margin-bottom: 2rem; }
+      nav ul { display: flex; flex-wrap: wrap; gap: .2rem 1.1rem; }
+      nav li { margin: 0; }
+    }
+    @page {
+      size: A4;
+      margin: 17mm 17mm 18mm;
+      @bottom-left { content: "Lastkomb · Användarmanual"; font: 8pt "Segoe UI", sans-serif; color: #486369; }
+      @bottom-right { content: "Sida " counter(page) " av " counter(pages); font: 8pt "Segoe UI", sans-serif; color: #486369; }
+    }
+    @media print {
+      :root { font-size: 10pt; color: #141e22; background: white; line-height: 1.37; }
+      .layout { display: block; max-width: none; margin: 0; padding: 0; }
+      nav { display: none; }
+      header { border-bottom: 1px solid #829b96; }
+      header p { font-size: 11pt; }
+      h1 { font-size: 25pt; }
+      h2 { font-size: 17pt; margin: .9em 0 .36em; }
+      h3 { font-size: 12pt; margin: .85em 0 .25em; }
+      p { margin: .28em 0 .58em; }
+      h1, h2, h3 { break-after: avoid-page; }
+      li, .example, pre, tr { break-inside: avoid; }
+      p, li { orphans: 2; widows: 2; }
+      .chapter + .chapter { break-before: page; margin: 0; padding: 0; border: 0; }
+      .chapter + .chapter > section:first-child h2 { margin-top: 0; }
+      .table-wrap, pre { overflow: visible; }
+      pre { white-space: pre-wrap; overflow-wrap: anywhere; }
+      thead { display: table-header-group; }
+      table { font-size: 9.5pt; margin: .45em 0 .7em; }
+      th, td { padding: .35em .5em; }
+      figure { margin-top: .7em; break-inside: avoid; }
+      figure img { width: auto; height: auto; max-width: 100%; max-height: 85mm; }
+      a { color: inherit; text-decoration: none; }
+    }
+  </style>
+</head>
+<body>
+<div class="layout">
+  <nav aria-label="Innehåll">
+    <strong>Innehåll</strong>
+    <ul>
+      <li><a href="#borja">Kom igång</a></li>
+      <li><a href="#exempel">Räkna med exemplet</a></li>
+      <li><a href="#import">Importera egna resultat</a></li>
+      <li><a href="#projekt">Spara och öppna projekt</a></li>
+      <li><a href="#lagen">Välj beräkningsläge</a></li>
+      <li><a href="#regler">Ställ in lastregler</a></li>
+      <li><a href="#snitt">Läs av diagram och snitt</a></li>
+      <li><a href="#export">Exportera tabell och figur</a></li>
+      <li><a href="#kontroller">Kontrollera modellen</a></li>
+      <li><a href="#passage">Beräkna en fordonsöverfart</a></li>
+    </ul>
+  </nav>
+  <main>
+    <header>
+      <h1>Lastkomb – användarmanual</h1>
+      <p>Från Abaqus laststeg till styrande lastkombination, samtidiga snittkrafter och färdiga rapporttabeller.</p>
+    </header>
+    <div class="chapter">
+      <section id="borja">
+        <h2>Kom igång</h2>
+        <p>I Windows packar du upp hela ZIP-filen och öppnar <code>Lastkomb.exe</code> i mappen <code>Lastkomb</code>. Behåll mapparna <code>app</code> och <code>runtime</code> bredvid programfilen. På Mac öppnar du DMG-filen och drar <b>Lastkomb</b> till <b>Program</b>. Appen och manualen fungerar offline. Öppna manualen igen med <b>Mer → Användarmanual</b> eller <kbd>F1</kbd>.</p>
+        <p>Programmet startar med en syntetisk bro. Välj en del i projektträdet till vänster. Mittpanelen visar diagram och punktvärden för den del, storhet och beräkningsmetod du väljer. Granskaren till höger visar vilka laster som gav ett valt värde. Vid en längre beräkning visas <b>Beräknar…</b> ovanför flikarna.</p>
+      </section>
+      <section id="exempel">
+        <h2>Räkna med exemplet vid 15 m</h2>
+        <ol>
+          <li>Välj <b>Mer → Öppna räkneexempel</b>. Markera <b>HUVUDBALK</b> i trädet. Välj <b>Diagram</b>, storheten <b>M<sub>y</sub> (SM1)</b> och läget <b>STR · 6.10a + b</b>.</li>
+          <li>Skriv <b>15</b> i både <b>Från</b> och <b>Till</b> och tryck <kbd>Retur</kbd>. Nu visas mittsnittet. Klicka i radens <b>Max</b>-cell för att se de styrande bidragen.</li>
+          <li>Byt till <b>Min</b>-cellen på samma rad. Jämför de aktiva laststegen i granskaren. Välj <b>Hela</b> för att se hela balken igen.</li>
+        </ol>
+        <div class="example">
+          <p><strong>Så får du 150,0975 kNm i maxkolumnen.</strong> Det permanenta momentet är 52 + 13 = 65 kNm. I 6.10b blir faktorn 0,89 × 1,35 = 1,2015. Servicefordonet i läge V4 ger 48 kNm från den vertikala lasten och 0 kNm från den horisontella i just detta snitt.</p>
+          <p class="formula">M<sub>y,max</sub> = 1,2015 × 65 + 1,50 × 48 = <strong>150,0975 kNm</strong>.</p>
+          <p>Samma lastplacering ger normalkraften <b>−480,312 kN</b>. För minsta moment styr i stället gångfälten 01, 09 och 10. Då är M<sub>y,min</sub> cirka <b>62,1671 kNm</b>.</p>
+        </div>
+        <p>För jämförelse ger 6.10a ensam cirka 106,4203 respektive 63,8668 kNm i detta snitt. Programmet redovisar yttervärdena över båda ekvationerna. Siffrorna här gäller räkneexemplets ursprungliga lastregler.</p>
+        <figure>
+          <img src="manual-snitt.png" alt="Huvudbalkens momentdiagram med avläsningslinjen vid 15 meter och snittets resultat i granskaren.">
+          <figcaption>Räkneexemplets huvudbalk med mittsnittet markerat. I snittgranskaren kan du välja ett max- eller minvärde för att se vilken lastplacering som styr.</figcaption>
+        </figure>
+      </section>
+    </div>
+    <div class="chapter">
+      <section id="import">
+        <h2>Importera egna resultat</h2>
+        <p>Exportera varje laststeg som ett oberoende, linjärt lastbidrag i samma lokala axelsystem. Om Abaqus-stegen innehåller successivt pålagda laster behöver du ta fram tillskottet från varje steg före importen.</p>
+        <ol>
+          <li>Välj <b>Importera CSV…</b> för enskilda filer, <b>+ Mapp</b> för en hel mapp med undermappar eller dra filerna till fönstret. Första egna importen ersätter räkneexemplet. Nästa import kompletterar projektet. En ändrad fil på samma sökväg ersätter sin tidigare version.</li>
+          <li>Öppna <b>Importkontroll</b>. Gå igenom avvikelser för saknade steg, ofullständiga punkter och motstridiga dubbletter. Punkter som saknar ett aktivt steg eller en samtidig storhet utesluts. Om ett helt laststeg saknas kan ett resultat ändå visas för det reducerade underlaget.</li>
+          <li>Bekräfta grupp, fält eller fordonsläge samt riktning under <b>Lastregler → Steg</b>. Kryssrutorna i projektträdet styr vilka filer och steg som används. Klicka sedan på rätt del under <b>Resultatdelar</b>.</li>
+        </ol>
+        <h3>Filer, rubriker och enheter</h3>
+        <p>Avgränsa kolumnerna med semikolon. Använd decimalpunkt eller decimalkomma och kodningen UTF-8 (med eller utan BOM) eller Windows-1252. Programmet läser kolumnrubrikerna. Följande filnamn fungerar som mallar.</p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Fil och användning</th><th>Kolumner</th></tr></thead>
+            <tbody>
+              <tr><td><code>HUVUDBALK_SM1.csv</code><br>Balk, en fil per storhet</td><td>Element, nod, x och vid behov y och z. Därefter en kolumn per laststeg. För hängare kan <code>Hängare x [m]</code> särskilja hängarna.</td></tr>
+              <tr><td><code>PLAT_Y0_LANGS.csv</code><br>Plåt, en rad per steg och punkt</td><td>Steg, sida (SPOS/SNEG), läge längs snittet, koordinater och komponenterna S11, S22 och S12 i MPa.</td></tr>
+              <tr><td><code>IL_huvudbalk.csv</code><br>Influenslinje för ett snitt</td><td>Steg, <code>Lastens x [m]</code> och ordinater som <code>SF1 [kN/kN]</code> eller <code>SM1 [kNm/kN]</code>.</td></tr>
+              <tr><td><code>BROBANA_U3.csv</code><br><code>LAGER_RF3.csv</code></td><td>Nod, x och ett värde per laststeg för förskjutning respektive stödreaktion.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>En balkfil kan exempelvis börja så här. Samma punktidentitet i delens SF1-, SM1- och SM2-filer gör att programmet kan koppla ihop storheterna även när radordningen varierar.</p>
+        <pre><code>Element;Nod;x [m];y [m];z [m];G_SELF;G_SURF;Q_VEH_V4
+130;230;15,0;0;0;52;13;48</code></pre>
+        <p>Standard är meter för koordinater och förskjutningar, kN för krafter, kNm för moment och MPa för spänningar. Ange andra enheter i rubriken, exempelvis <code>G_SELF [mm]</code> i en U3-fil.</p>
+      </section>
+      <section id="projekt">
+        <h2>Spara och öppna projekt</h2>
+        <p>Välj <b>Spara</b> för att skapa en flyttbar <code>.lastkomb</code>-fil med original-CSV, kontrollsummor, regler, urval och fästa kurvor. <b>Öppna…</b> räknar om resultat från projektets inbäddade data. När originalfilerna har ändrats använder du <b>Läs uppdaterade källfiler</b> i granskaren. <b>Mer → Spara som…</b> skapar en separat projektkopia.</p>
+      </section>
+    </div>
+    <div class="chapter">
+      <section id="lagen">
+        <h2>Välj beräkningsläge</h2>
+        <p>Använd listan uppe till höger ovanför flikarna. Varje max och min gäller separat för vald resultatpunkt och storhet. För en influenslinje visar diagrammet den importerade ordinaten vid varje lastläge.</p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Läge</th><th>Vad resultatet visar</th></tr></thead>
+            <tbody>
+              <tr><td><b>STR · 6.10a + b</b></td><td>Dimensionerande omhölje av permanenta laster och trafik. Programmet provar båda ekvationerna enligt kursuppgift AF2203, avsnitt 3.5, och behåller det styrande fallet för varje extremvärde.</td></tr>
+              <tr><td><b>Karakteristisk trafik</b></td><td>Omhölje av aktiva gång- och fordonslaster med karakteristiska värden och valda placeringsregler. Permanenta laster utelämnas.</td></tr>
+              <tr><td><b>Utmattning · fordon</b></td><td>Omhölje av de importerade fordonsstegen med karakteristiska värden. För cykelräkning och skada under en rörlig passage använder du fliken <a href="#passage">Fordonsöverfart</a>.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+      <section id="regler">
+        <h2>Ställ in lastregler</h2>
+        <h3>Vilka steg hör ihop?</h3>
+        <p>Under <b>Lastregler → Steg</b> hör till exempel <code>Q_PED_02</code> och <code>H_PED_02</code> till samma gångfält, med vertikal respektive horisontell last. Motsvarande par för ett fordonsläge är exempelvis <code>Q_VEH_V4</code> och <code>H_VEH_V4</code>. Kontrollera egna stegnamn och koppla dem manuellt vid behov. Horisontalstegen ska redan innehålla den avsedda horisontallasten.</p>
+        <h3>Permanent last och partialkoefficienter</h3>
+        <p>Förvalet samlar permanenta steg som <code>G_SELF</code> och <code>G_SURF</code> i samma grupp. För ett moment summeras först gruppens bidrag i punkten. En positiv summa är ogynnsam när största moment söks och en negativ summa är ogynnsam när minsta moment söks.</p>
+        <p>Med förvalen är ogynnsam G-faktor 1,35 i 6.10a och 0,89 × 1,35 i 6.10b. Gynnsam G-faktor är 1,00. För trafik är ogynnsam γ = 1,50 och gynnsam γ = 0. Kombinationsfaktorn ψ₀ är 0,4 för gångtrafik och 0 för servicefordon. γ<sub>d</sub> är förvald till 1,00. I 6.10b får huvudlasten fullt trafikvärde och medföljande last får ψ₀.</p>
+        <p>För egna permanenta faktorer markerar du laststeget i <b>Steg</b> och väljer <b>Egen G-grupp för markerat steg</b>. Vill du att flera laster ska prövas tillsammans, skapa en grupp under <b>G-grupper</b> och tilldela stegen den gruppen. Varje grupp bedöms för sig. Avsluta med <b>Tillämpa</b>.</p>
+        <h3>Lastplacering och axlar</h3>
+        <p>Under <b>Regler</b> provas i förvalet ogynnsamma gångfält med en gemensam horisontalriktning, ett fordonsläge i taget och även fallet utan trafik. Gångtrafik och fordon utesluter varandra. P1 omfattar fälten 02–09 och P2 fälten 02–05. Stäm av numreringen med din export innan du väljer ett fast mönster. Tillåter du samtidig trafik prövas olika huvudlaster i 6.10b.</p>
+        <p>Under <b>Modell</b> bekräftar du kopplingen mellan SM1/SM2 och M<sub>y</sub>/M<sub>z</sub> för vald del mot Abaqus lokala axlar. Du kan också ange lägen för lager, hängare och tung fordonsaxel som diagrammarkeringar. Klicka på <b>Tillämpa</b> när du har ändrat inställningarna.</p>
+      </section>
+    </div>
+    <div class="chapter">
+      <section id="snitt">
+        <h2>Läs av diagram och snitt</h2>
+        <p>För en balk är den vågräta axeln x längs delen. För plåt är den läget längs snittet. För en influenslinje anger den enhetslastens läge. <b>Böjmoment ritas med positiv riktning nedåt</b>, även för momentens influenslinjer. Ett värde på +150 kNm ligger alltså längre ned än +62 kNm. Tabellen, granskaren och exporten använder modellens algebraiska tecken.</p>
+        <h3>Hitta extremvärden i ett snitt</h3>
+        <p>Klicka i diagrammet eller dra den lodräta snittlinjen till ett läge. Rutan <b>Snittgranskare</b> till höger visar närmaste tillgängliga resultatläge i meter. När du granskar omhöljet visas varje storhets största och minsta värde bland snittets giltiga punkter för vald del, sida, intervall, beräkningsläge och aktiva steg. Värdena kommer från importerade punkter. På influenslinjer läser du ordinaterna vid det valda lastläget.</p>
+        <p>Klicka på ett max- eller minvärde i snittgranskaren för att välja dess storhet, punkt och lastkombination. Detaljerna visas längre ned i granskaren. Under en längre snittberäkning visas <b>Beräknar snittet…</b>. Stäng rutan med <b>×</b>.</p>
+        <p>Vill du i stället veta <em>vilka krafter som uppträder samtidigt</em>, klicka nära en punkt på önskad kurva eller på <b>Max</b> eller <b>Min</b> i punkttabellen. <b>Granskare</b> visar den styrande ekvationen och lastplaceringen, faktor × laststegsvärde och samtidiga värden från samma lastkombination i samma punkt. Använd element och nod för att skilja punkter åt när flera ligger vid samma x.</p>
+        <p>Begränsa diagram och tabell med <b>Från</b> och <b>Till</b> följt av <kbd>Retur</kbd>, eller håll ned <kbd>Skift</kbd> och dra vågrätt. <b>Hela</b> återställer hela intervallet.</p>
+        <h3>Jämför kurvor och plåtsidor</h3>
+        <p>Öppna <b>Kurvor</b> för att visa enskilda ofaktorerade steg. Välj ett extremvärde och klicka på <b>Visa kombination som kurva</b> för att följa just den lastplaceringen längs delen. Omhöljets olika punkter kan däremot styras av olika placeringar. Fästa kombinationer rensas när lastreglerna ändras.</p>
+        <p>Välj kurvans namn i granskaren eller klicka på kurvan. Snittrutan visar nu <b>Lastfall</b> eller <b>Fast kombination</b> och namnet. För en punkt visas <b>Värde</b> per storhet. Om flera punkter delar läget visas deras <b>Max</b> och <b>Min</b> med samma lastfaktorer genomgående, även för von Mises. Klicka på en siffra för att se exakt punkt och storhet för den valda kurvan. Välj <b>Styrande maximum</b> eller <b>Styrande minimum</b> för att återgå till omhöljet.</p>
+        <p>För plåt väljer du <b>SPOS</b> eller <b>SNEG</b> enligt skalets lokala normal. <b>Mises</b> kombinerar först S11, S22 och S12 för en och samma lastplacering och beräknar därefter von Mises-spänningen. <b>Tryck</b> anger om minsta huvudspänningen är negativ i någon tillåten kombination. <b>Okänt</b> anger saknade komponenter. Bucklingsbärförmågan behöver bedömas separat.</p>
+      </section>
+      <section id="export">
+        <h2>Exportera tabell och figur</h2>
+        <p>Välj del, sida, läge och intervall i <b>Diagram</b>. Kontrollera avvikelserna. <b>Exportera tabell…</b> ger en Excel-arbetsbok (<code>.xlsx</code>) eller separata semikolonseparerade CSV-filer i samma mapp.</p>
+        <ul>
+          <li><b>Diagramvärden</b> visar den valda storhetens max/min per punkt. <b>Redovisning 5.3</b> sammanfattar varje storhets globala max/min inom urvalet.</li>
+          <li><b>Alla punktextremer</b> ger varje storhets max/min i alla giltiga punkter med samtidiga värden, lastkombination och stegfaktorer. <b>Beräkningsvillkor</b> anger bland annat steg, regler och avvikelser.</li>
+          <li><b>Valda kurvor</b> tillkommer när du visar jämförelsekurvor. En influenslinje exporteras i stället som en tabell med ordinater.</li>
+        </ul>
+        <p><b>Spara figur…</b> exporterar diagrammet med valt intervall och kurvor till PNG, SVG eller PDF. Avläsningslinjen för snitt döljs i den sparade figuren. Använd SVG eller PDF om figuren ska skalas i en rapport.</p>
+      </section>
+    </div>
+    <div class="chapter">
+      <section id="kontroller">
+        <h2>Kontrollera modellen</h2>
+        <p>Välj en del i trädet, öppna <b>Kontroller</b>, välj metod och fyll i uppgifterna. Klicka på <b>Kör kontroll</b>. Kontrollerna använder hela den valda delen, även när diagrammet visar ett kortare intervall.</p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Kontroll</th><th>Gör så här</th></tr></thead>
+            <tbody>
+              <tr><td><b>Egenlast med faktor 1</b></td><td>Välj ett permanent steg. Programmet kontrollerar att det isolerade steget med faktor 1 återger alla importerade punktvärden för delens storheter.</td></tr>
+              <tr><td><b>Spegelsymmetri</b></td><td>Välj storhet och ett verkligt speglat stegpar. Ange samma eller motsatt tecken, spegelplan samt koordinat- och värdetolerans. Resultatet anger största avvikelsen och spegelparets lägen. V2 och V4 har båda tung axel vid x = 15 m i kursens placering och skiljer sig i sidled.</td></tr>
+              <tr><td><b>Reaktionsjämvikt</b></td><td>Importera den relevanta RF-komponenten för alla stödnoder. Välj steg, ange yttre last med tecken i samma riktning och bekräfta att alla stöd ingår. Residualen är summan av stödreaktionerna plus den yttre lasten i kN.</td></tr>
+              <tr><td><b>Nedböjning L/400</b></td><td>Välj vertikal U-komponent, bekräfta riktningen och ange teoretisk spännvidd i meter. Största absoluta förskjutningen från aktiva karakteristiska trafiksteg jämförs med L/400. Vid L = 30 m är gränsen 75 mm.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+      <section id="passage">
+        <h2>Beräkna en fordonsöverfart</h2>
+        <p>För att få ett spänningsförlopp i en bestämd fiber behöver du influenslinjen för just det snittet och körspåret. Lastens x-position ändras under passagen medan det analyserade snittet ligger kvar.</p>
+        <ol>
+          <li>Välj influenslinjen i projektträdet. Öppna <b>Fordonsöverfart</b> och bekräfta att linjen avser en nedåtriktad enhetslast på 1 kN fördelad över båda hjulspåren. Linjen måste omfatta hela bron med noll i ändpunkterna.</li>
+          <li>Ange axellaster och axelavstånd. Förvalet placerar 80 kN vid x och 40 kN vid x − 3 m. Programmet interpolerar linjärt mellan lastlägen och använder noll utanför linjens ändpunkter.</li>
+          <li>Ange area i mm² och, för böjning, signerade koefficienter k₁ och k₂ i MPa/kNm för vald fiber och respektive momentkomponent. En fiber på avstånd r i mm från neutralaxeln har koefficienten ±10⁶r/I när I mäts i mm⁴. Om endast axiell spänning ska ingå, välj <b>Beräkna endast axiell normalspänning N/A</b>.</li>
+          <li>Ange detaljkategori Δσ<sub>C</sub> för den aktuella detaljen samt γ<sub>Mf</sub>. Välj <b>Beräkna spektrum och skadeandel</b>.</li>
+        </ol>
+        <p>Resultatet ger minsta och största fiberspänning, spänningsvidder, cykler per passage, skadeandel per passage och antal hela passager till D = 1 när skadan är positiv. Cyklerna räknas med rainflow för en upprepad vertikal passage i positiv x-riktning och skadan summeras enligt Palmgren–Miner. Bromsning kräver ett eget lastförlopp.</p>
+      </section>
+    </div>
+  </main>
+</div>
+</body>
+</html>

@@ -14,33 +14,75 @@ PURPLE = "#8657aa"
 
 
 class Chart(FigureCanvasQTAgg):
-    def __init__(self, on_pick, on_interval):
+    def __init__(self, on_pick, on_interval, on_section=None):
         self.figure = Figure(figsize=(7.5, 3.9), dpi=100, layout="constrained")
         super().__init__(self.figure)
         self.on_pick, self.on_interval = on_pick, on_interval
+        self.on_section = on_section
         self.dark = False
         self.current = None
         self.picklines = []
         self.selection_line = None
+        self.section_line = None
         self.start = None
         self.mpl_connect("button_press_event", self.press)
+        self.mpl_connect("motion_notify_event", self.motion)
         self.mpl_connect("button_release_event", self.release)
         self.render(None, {}, {})
 
     def press(self, event):
-        self.start = (event.x, event.xdata) if event.button == 1 and event.inaxes == self.ax else None
+        self.start = None
+        if event.button == 1 and event.inaxes == self.ax and self.current is not None:
+            interval = self.on_section is None or "shift" in event.modifiers
+            self.start = (event.x, event.xdata, interval)
+
+    def motion(self, event):
+        if self.start and not self.start[2] and event.inaxes == self.ax:
+            if abs(event.x - self.start[0]) > 3:
+                self.move_section(event.xdata)
+
+    def nearest_station(self, x):
+        # calculate() returns points sorted by station, including coincident points.
+        i = int(self.positions.searchsorted(x))
+        if i == len(self.positions) or (i and x - self.positions[i - 1] <= self.positions[i] - x):
+            i -= 1
+        return self.positions[i]
+
+    def move_section(self, x):
+        position = self.nearest_station(x)
+        if self.section_line is None or self.section_line.get_xdata()[0] != position:
+            self.on_section(position)
+
+    def mark_section(self, x):
+        if x is None:
+            if self.section_line is not None:
+                self.section_line.remove()
+                self.section_line = None
+        elif self.section_line is None:
+            self.section_line = self.ax.axvline(x, color="#c27720", lw=1.4, ls="--", zorder=5)
+        else:
+            self.section_line.set_xdata([x, x])
+        self.draw_idle()
 
     def release(self, event):
         start, self.start = self.start, None
         if not start or event.xdata is None or event.inaxes != self.ax:
             return
-        if abs(start[0] - event.x) > 12:
+        if start[2] and abs(start[0] - event.x) > 12:
             self.on_interval(*sorted((start[1], event.xdata)))
             return
         if not self.picklines:
             return
+        if not start[2] and abs(start[0] - event.x) > 3:
+            self.move_section(event.xdata)
+            return
+        position = self.nearest_station(event.xdata)
         best = None
         for ids, ys, direction in self.picklines:
+            at_station = self.positions[ids] == position
+            ids, ys = ids[at_station], ys[at_station]
+            if not len(ids):
+                continue
             xy = np.column_stack((self.positions[ids], ys))
             dist = np.square(self.ax.transData.transform(xy) - [event.x, event.y]).sum(axis=1)
             k = int(np.argmin(dist))
@@ -48,6 +90,10 @@ class Chart(FigureCanvasQTAgg):
                 best = (dist[k], ids[k], direction)
         if best and best[0] < 35**2:
             self.on_pick(int(best[1]), best[2])
+            if self.on_section is not None:
+                self.on_section(self.positions[best[1]])
+        elif not start[2]:
+            self.move_section(event.xdata)
 
     def select_point(self, idx, direction):
         if self.selection_line:
@@ -69,6 +115,8 @@ class Chart(FigureCanvasQTAgg):
     def render(self, result, view, config, curves=None):
         self.current = result
         self.figure.clear()
+        self.start = None
+        self.section_line = None
         self.selection_line = None
         self.picklines = []
         self.ax = ax = self.figure.add_subplot(111)
@@ -109,7 +157,11 @@ class Chart(FigureCanvasQTAgg):
         label = quantity_label(result.target, config, part.name)
         if isinstance(label, NotationText):
             label = label.as_mathtext()
-        ax.set_ylabel(f"{label} [{result.unit}]", color=ink, fontsize=9)
+        axis_label = f"{label} [{result.unit}]"
+        if result.target in ("SM1", "SM2"):
+            ax.yaxis.set_inverted(True)
+            axis_label += " · positivt nedåt"
+        ax.set_ylabel(axis_label, color=ink, fontsize=9)
         ax.yaxis.set_major_locator(MaxNLocator(nbins=6))
         groups = defaultdict(list)
         ys = {p.get("y") for p in pts}
@@ -184,4 +236,12 @@ class Chart(FigureCanvasQTAgg):
         self.draw_idle()
 
     def export(self, path):
-        self.figure.savefig(path, dpi=300, bbox_inches="tight", facecolor=self.figure.get_facecolor())
+        cursor = self.section_line
+        visible = cursor is not None and cursor.get_visible()
+        if visible:
+            cursor.set_visible(False)
+        try:
+            self.figure.savefig(path, dpi=300, bbox_inches="tight", facecolor=self.figure.get_facecolor())
+        finally:
+            if visible:
+                cursor.set_visible(True)

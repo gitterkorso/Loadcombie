@@ -22,6 +22,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from .activity import wait_cursor
 from .analysis import calculate, group_of, quantity_label
 from .engine import default_config, envelope
 from .qt_notation import NotationComboBox, engineering_html
@@ -329,7 +330,8 @@ class ChecksPanel(QWidget):
         self.scope.setText(notes[mode] if enabled else unavailable[mode])
         self.result.clear()
 
-    def _run(self):
+    @wait_cursor()
+    def _run(self, _checked=False):
         mode = self.mode.currentData()
         settings = {
             "mode": mode,

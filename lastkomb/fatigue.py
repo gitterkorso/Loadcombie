@@ -29,6 +29,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from .activity import wait_cursor
 from .analysis import quantity_label
 from .qt_notation import engineering_html
 
@@ -297,6 +298,7 @@ class FatiguePanel(QWidget):
         if params and part is not None:
             self._calculate(save=False)
 
+    @wait_cursor()
     def _calculate(self, _checked=False, *, save=True):
         params = {key: field.text() for key, field in self.fields.items()}
         params.update(axle_path=self.axle_path.isChecked(), axial_only=self.axial_only.isChecked())
